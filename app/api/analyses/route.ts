@@ -14,7 +14,7 @@ export async function GET() {
       .toArray();
     return NextResponse.json({ records });
   } catch (err) {
-    console.error("[analyses] failed to load", err);
+    console.warn("[analyses] MongoDB unavailable; using fallback store", err);
     try {
       const records = await listCachedAnalyses();
       return NextResponse.json({ records, degraded: true });

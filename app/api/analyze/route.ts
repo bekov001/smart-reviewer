@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   try {
     collection = await getAnalysesCollection();
   } catch (err) {
-    console.error("[analyze] failed to open collection; using fallback store", err);
+    console.warn("[analyze] MongoDB unavailable; using fallback store", err);
   }
 
   // Dedupe: if this article was already analyzed, return the stored analysis
