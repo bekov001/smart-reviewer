@@ -40,7 +40,7 @@ export function SearchBar({
         <label htmlFor="news-search" className="sr-only">
           Search recent news
         </label>
-        <div className="group flex flex-1 items-center gap-3 rounded-sm bg-surface px-3.5">
+        <div className="group flex flex-1 items-center gap-3 rounded-sm bg-surface px-3.5 transition-colors duration-150 focus-within:bg-sunken">
           <SearchIcon className="h-[18px] w-[18px] shrink-0 text-faint transition-colors group-focus-within:text-ink" />
           <input
             id="news-search"

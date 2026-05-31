@@ -12,7 +12,8 @@ export async function GET() {
       .sort({ analyzedAt: -1 })
       .toArray();
     return NextResponse.json({ records });
-  } catch {
+  } catch (err) {
+    console.error("[analyses] failed to load", err);
     return NextResponse.json(
       { error: "Failed to load analyses." },
       { status: 500 },

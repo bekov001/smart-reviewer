@@ -69,7 +69,11 @@ export default function Home() {
 
   // Load previously stored analyses on mount (proves MongoDB persistence).
   useEffect(() => {
-    loadAnalyses();
+    const timeoutId = window.setTimeout(() => {
+      void loadAnalyses();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadAnalyses]);
 
   // Streaming analysis. The endpoint streams partial objects so the summary

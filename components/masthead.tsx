@@ -11,14 +11,18 @@ export function Masthead({ analyzedCount }: { analyzedCount: number }) {
   const [today, setToday] = useState("");
 
   useEffect(() => {
-    setToday(
-      new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-    );
+    const timeoutId = window.setTimeout(() => {
+      setToday(
+        new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+      );
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (

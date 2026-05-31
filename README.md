@@ -25,6 +25,8 @@ It handles the full request lifecycle — **loading**, **error** (with retry), a
 - **OpenAI** via the **Vercel AI SDK** (`generateObject` + a Zod schema) for
   structured GenAI output.
 - **MongoDB** (Atlas) via the official `mongodb` driver.
+- **Upstash Redis** (optional) for per-IP rate limiting on paid/external API
+  routes.
 - **Tailwind CSS** for a clean, responsive UI.
 
 ## Architecture
@@ -34,6 +36,7 @@ Browser (app/page.tsx, client SPA)
    │  fetch
    ▼
 Next.js API routes (server — hold the secrets)
+   ├─ optional Upstash rate limit on /api/news and /api/analyze
    ├─ GET  /api/news?q=…   → proxies GNews.io, returns trimmed articles
    ├─ POST /api/analyze    → dedupe → OpenAI (1 call) → upsert into MongoDB
    └─ GET  /api/analyses   → list stored analyses for the table
@@ -81,6 +84,8 @@ npm install
 # 2. Configure environment
 cp .env.example .env.local
 # then edit .env.local and fill in GNEWS_API_KEY, OPENAI_API_KEY, MONGODB_URI
+# optional: fill KV_REST_API_URL/KV_REST_API_TOKEN or
+# UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN to enable rate limiting
 
 # 3. Run the dev server
 npm run dev
@@ -102,7 +107,11 @@ intelligence"), and click **Analyze** on an article.
    and Preview environments.
 3. Ensure MongoDB Atlas *Network Access* allows Vercel egress (`0.0.0.0/0` for
    the demo).
-4. Deploy.
+4. Optional but recommended: install **Upstash for Redis** from the Vercel
+   Marketplace. The app reads the generated `KV_REST_API_URL` and
+   `KV_REST_API_TOKEN` variables. Direct Upstash projects can use
+   `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` instead.
+5. Deploy.
 
 **Live demo:** _add the Vercel URL here after deploying._
 

@@ -6,7 +6,6 @@ const dbName = process.env.MONGODB_DB || "smart_reviewer";
 // Cache the connection promise across hot reloads in dev and across warm
 // invocations in serverless, so we don't open a new pool on every request.
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 

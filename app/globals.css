@@ -106,6 +106,12 @@ body {
   border-radius: var(--radius-sm);
 }
 
+/* The search field signals focus with a fill change and the caret, not a stroke. */
+#news-search:focus-visible,
+#news-search:focus {
+  outline: none;
+}
+
 .font-serif {
   font-family: var(--font-serif);
 }

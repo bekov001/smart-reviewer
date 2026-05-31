@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { NewsArticle } from "@/lib/types";
 import { AnalyzeIcon, CheckIcon, ExternalIcon } from "./icons";
 
@@ -14,6 +15,7 @@ export function ArticleCard({
   analyzing: boolean;
   analyzed: boolean;
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const date = new Date(article.publishedAt);
   const stamp = Number.isNaN(date.getTime())
     ? ""
@@ -42,13 +44,18 @@ export function ArticleCard({
         <ExternalIcon className="mt-1.5 h-3.5 w-3.5 shrink-0 text-faint" />
       </a>
 
-      {article.image ? (
+      {article.image && !imgFailed ? (
         <div className="mt-3 overflow-hidden border border-hairline">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={article.image}
             alt=""
             loading="lazy"
+            decoding="async"
+            // News image CDNs commonly 403 cross-origin hotlinks; dropping the
+            // referrer lets most of them serve. Any that still fail are hidden.
+            referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
             className="aspect-[16/9] w-full object-cover transition-transform duration-500 ease-[var(--ease-out-quint)] group-hover:scale-[1.02]"
           />
         </div>

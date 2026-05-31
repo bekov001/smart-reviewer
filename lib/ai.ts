@@ -37,6 +37,11 @@ export function streamArticleAnalysis(
     model: openai(MODEL),
     schema: analysisSchema,
     prompt: buildPrompt(article),
+    // Model/stream failures otherwise vanish (the HTTP stream has already
+    // started, so they can't become an error status) — log them at least.
+    onError: ({ error }) => {
+      console.error("[ai] streamObject failed", { url: article.url, error });
+    },
     onFinish: async ({ object }) => {
       if (object && onFinish) await onFinish(object);
     },

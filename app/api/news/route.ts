@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/ratelimit";
 import type { NewsArticle } from "@/lib/types";
 
 export const runtime = "nodejs";
+
+const MAX_QUERY_CHARS = 200;
 
 interface GNewsArticle {
   title: string;
@@ -13,7 +16,15 @@ interface GNewsArticle {
 }
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q")?.trim();
+  const rl = await checkRateLimit("news", req);
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Please slow down and try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
+  const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, MAX_QUERY_CHARS);
   if (!q) {
     return NextResponse.json({ error: "Missing search query." }, { status: 400 });
   }
@@ -35,6 +46,7 @@ export async function GET(req: NextRequest) {
     // stay well under the GNews free-tier daily request limit.
     const res = await fetch(url, { next: { revalidate: 600 } });
     if (!res.ok) {
+      console.error(`[news] GNews responded ${res.status} for q="${q}"`);
       const message =
         res.status === 429
           ? "News API rate limit reached. Please try again later."
@@ -51,7 +63,8 @@ export async function GET(req: NextRequest) {
       publishedAt: a.publishedAt,
     }));
     return NextResponse.json({ articles });
-  } catch {
+  } catch (err) {
+    console.error("[news] request to GNews failed", err);
     return NextResponse.json(
       { error: "Failed to reach the News API." },
       { status: 502 },
