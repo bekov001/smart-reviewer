@@ -1,5 +1,5 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { getOptionalRedis } from "./upstash";
 
 // Rate limiting is OPTIONAL: it activates only when Upstash Redis is configured.
 // Without it the app still runs (useful for local/review) — limiting is simply
@@ -7,16 +7,11 @@ import { Redis } from "@upstash/redis";
 //
 // We accept both naming conventions: the standard Upstash names and the KV_*
 // names provisioned by the Vercel Upstash Marketplace integration.
-const redisUrl =
-  process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-const redisToken =
-  process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
-const hasUpstash = !!redisUrl && !!redisToken;
-
 function makeLimiter(prefix: string, limit: number, window: `${number} s`) {
-  if (!hasUpstash) return null;
+  const redis = getOptionalRedis();
+  if (!redis) return null;
   return new Ratelimit({
-    redis: new Redis({ url: redisUrl, token: redisToken }),
+    redis,
     limiter: Ratelimit.slidingWindow(limit, window),
     prefix,
     analytics: false,

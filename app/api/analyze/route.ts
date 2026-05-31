@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { streamArticleAnalysis } from "@/lib/ai";
+import { getCachedAnalysis, saveCachedAnalysis } from "@/lib/analysis-store";
 import { getAnalysesCollection } from "@/lib/mongodb";
 import { checkRateLimit } from "@/lib/ratelimit";
 import type { Analysis, AnalysisRecord, NewsArticle } from "@/lib/types";
@@ -44,25 +45,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let collection;
+  let collection: Awaited<ReturnType<typeof getAnalysesCollection>> | null = null;
   try {
     collection = await getAnalysesCollection();
   } catch (err) {
-    console.error("[analyze] failed to open collection", err);
-    return NextResponse.json(
-      { error: "Database is not configured." },
-      { status: 500 },
-    );
+    console.error("[analyze] failed to open collection; using fallback store", err);
   }
 
   // Dedupe: if this article was already analyzed, return the stored analysis
-  // as a single JSON chunk WITHOUT calling the LLM. `useObject` on the client
-  // parses a one-shot body just like a stream. This is the call-minimising step.
+  // as a single JSON chunk WITHOUT calling the LLM. If MongoDB is temporarily
+  // unavailable, the Upstash fallback store still avoids repeated paid calls.
   try {
-    const existing = await collection.findOne(
-      { url: body.url },
-      { projection: { _id: 0 } },
-    );
+    const existing =
+      (collection
+        ? await collection.findOne(
+            { url: body.url },
+            { projection: { _id: 0 } },
+          )
+        : null) ?? (await getCachedAnalysis(body.url));
+
     if (existing) {
       const analysis: Analysis = {
         summary: existing.summary,
@@ -76,7 +77,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("[analyze] dedupe lookup failed", err);
-    return NextResponse.json({ error: "Database lookup failed." }, { status: 500 });
   }
 
   const article: NewsArticle = {
@@ -103,11 +103,21 @@ export async function POST(req: NextRequest) {
         ...analysis,
         analyzedAt: new Date().toISOString(),
       };
-      await collection.updateOne(
-        { url: record.url },
-        { $set: record },
-        { upsert: true },
-      );
+      const writes: Promise<unknown>[] = [saveCachedAnalysis(record)];
+      if (collection) {
+        writes.push(
+          collection.updateOne(
+            { url: record.url },
+            { $set: record },
+            { upsert: true },
+          ),
+        );
+      }
+
+      const results = await Promise.allSettled(writes);
+      for (const write of results) {
+        if (write.status === "rejected") throw write.reason;
+      }
     } catch (err) {
       console.error("[analyze] failed to persist analysis", {
         url: article.url,

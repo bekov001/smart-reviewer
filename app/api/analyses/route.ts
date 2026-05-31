@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { listCachedAnalyses } from "@/lib/analysis-store";
 import { getAnalysesCollection } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -14,9 +15,15 @@ export async function GET() {
     return NextResponse.json({ records });
   } catch (err) {
     console.error("[analyses] failed to load", err);
-    return NextResponse.json(
-      { error: "Failed to load analyses." },
-      { status: 500 },
-    );
+    try {
+      const records = await listCachedAnalyses();
+      return NextResponse.json({ records, degraded: true });
+    } catch (fallbackErr) {
+      console.error("[analyses] failed to load fallback store", fallbackErr);
+      return NextResponse.json(
+        { error: "Failed to load analyses." },
+        { status: 500 },
+      );
+    }
   }
 }
