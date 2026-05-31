@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Smart Reviewer — editorial broadsheet design system
+   Ink on clean paper, serif masthead, hairline rules. The interface is
+   MONOCHROME EXCEPT FOR SENTIMENT: green / red / neutral are the only chromatic
+   colors on the page, because sentiment is the one thing the tool measures.
+   Tokens are exposed to Tailwind v4 via @theme.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+
+  /* Paper & ink — faint cool-neutral, deliberately NOT cream. */
+  --color-paper: oklch(0.988 0.001 260);
+  --color-surface: oklch(0.965 0.002 260);
+  --color-sunken: oklch(0.945 0.003 260);
+  --color-hairline: oklch(0.9 0.003 260);
+  --color-rule: oklch(0.82 0.004 260);
+
+  /* Text */
+  --color-ink: oklch(0.21 0.006 265);
+  --color-muted: oklch(0.46 0.006 265);
+  --color-faint: oklch(0.58 0.005 265);
+
+  /* The only non-sentiment "accent" is ink itself (filled buttons, rules). */
+  --color-ink-hover: oklch(0.32 0.008 265);
+
+  /* Semantic sentiment — the page's sole chromatic vocabulary. */
+  --color-positive: oklch(0.5 0.13 150);
+  --color-negative: oklch(0.53 0.2 25);
+  --color-neutral: oklch(0.5 0.005 265);
+
+  /* Type scale (fixed rem, editorial contrast) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-toast: 300;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Soft washes for sentiment pills/fills. Outside @theme so color-mix can use
+   the tokens above. */
+:root {
+  --positive-wash: color-mix(in oklab, var(--color-positive) 12%, var(--color-paper));
+  --negative-wash: color-mix(in oklab, var(--color-negative) 11%, var(--color-paper));
+  --neutral-wash: color-mix(in oklab, var(--color-neutral) 9%, var(--color-paper));
+}
+
+* {
+  border-color: var(--color-hairline);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+/* Quiet themed scrollbar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule) transparent;
+}
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-rule);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* Focus ring — ink, high-contrast, consistent. */
+:where(a, button, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-sunken);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-paper) 75%, transparent),
+    transparent
+  );
+  animation: shimmer 1.5s var(--ease-out-quint) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .skeleton::after {
+    display: none;
+  }
+}
